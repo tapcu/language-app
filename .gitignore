@@ -1,0 +1,7 @@
+/packages
+/.vs
+/LanguageApp/bin
+/LanguageApp/obj
+*.db
+*.lnk
+*.user
