@@ -1,0 +1,159 @@
+﻿<Window x:Class="LanguageApp.src.DatabaseWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:dg1="http://schemas.microsoft.com/netfx/2009/xaml/presentation"
+        xmlns:namespace="clr-namespace:LanguageApp.src"
+        mc:Ignorable="d"  Icon="/Icons/Edit_small.ico"
+        x:Name="db_window"
+        Title="Edit database" Height="450" Width="600">
+    <Window.Resources>
+        <namespace:IsDateInPastConverter x:Key="IsDateInPastConverter" />
+    </Window.Resources>
+    <Grid>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Height="42" VerticalAlignment="Top" Width="170">
+            <Button x:Name = "DeleteButton"  
+            Content = "Delete row" 
+            Click = "OnDeleteButtonClick"
+            VerticalAlignment="Center"
+            Margin = "10,10,10,10"/>
+            <Button x:Name = "UpdateButton"  
+            Content = "Save changes" 
+            Click = "OnUpdateButtonClick"
+            VerticalAlignment="Center"
+            Margin = "0,10,10,10"/>
+        </StackPanel>
+        <dg1:DataGrid Name="testGrid" ItemsSource="{Binding}" Margin="0,42,0,0" SizeChanged="testGrid_SizeChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Id" Binding="{Binding id}" x:Name="idCol">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="ContentTemplate">
+                                <Setter.Value>
+                                    <DataTemplate>
+                                        <Border Margin="-3,-5,-3,-2">
+                                            <StackPanel Orientation="Vertical" Width="{Binding Path=IdColWidth, ElementName=db_window, Mode=Default}">
+                                                <!--Width="{Binding ActualWidth, ElementName=idCol, UpdateSourceTrigger=PropertyChanged}"-->
+                                                <Label Content="Id" HorizontalAlignment="Center" Padding="1"/>
+                                                <TextBox x:Name="tbId" TextChanged="tbId_TextChanged" Padding="0"></TextBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Word" Binding="{Binding word}" x:Name="wordColumn">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="ContentTemplate">
+                                <Setter.Value>
+                                    <DataTemplate>
+                                        <Border Margin="-3,-5,-3,-2">
+                                            <StackPanel Orientation="Vertical" Width="{Binding Path=WordColWidth, ElementName=db_window, Mode=Default}">
+                                                <!--Width="{Binding ActualWidth, ElementName=wordColumn, UpdateSourceTrigger=PropertyChanged}"-->
+                                                <Label Content="Word" HorizontalAlignment="Center" Padding="1"/>
+                                                <TextBox x:Name="tbWord" TextChanged="tbWord_TextChanged" Padding="0"></TextBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Translation" Binding="{Binding translation}">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="ContentTemplate">
+                                <Setter.Value>
+                                    <DataTemplate>
+                                        <Border Margin="-3,-5,-3,-2">
+                                            <StackPanel Orientation="Vertical" Width="{Binding Path=TranColWidth, ElementName=db_window, Mode=Default}">
+                                                <Label Content="Translation" HorizontalAlignment="Center" Padding="1"/>
+                                                <TextBox x:Name="tbTranslation" TextChanged="tbTranslation_TextChanged" Padding="0"></TextBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Correct Answers" Binding="{Binding correct_answers}" x:Name="answerColumn">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="ContentTemplate">
+                                <Setter.Value>
+                                    <DataTemplate>
+                                        <Border Margin="-3,-5,-3,-2">
+                                            <StackPanel Orientation="Vertical" Width="{Binding Path=AnswColWidth, ElementName=db_window, Mode=Default}">
+                                                <Label Content="Correct Answers" HorizontalAlignment="Center" Padding="1"/>
+                                                <TextBox x:Name="tbAnsw" TextChanged="tbAnswers_TextChanged" Padding="0"></TextBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Iteration" Binding="{Binding iteration}">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="ContentTemplate">
+                                <Setter.Value>
+                                    <DataTemplate>
+                                        <Border Margin="-3,-5,-3,-2">
+                                            <StackPanel Orientation="Vertical" Width="{Binding Path=IterColWidth, ElementName=db_window, Mode=Default}">
+                                                <Label Content="Iteration" HorizontalAlignment="Center" Padding="1"/>
+                                                <TextBox x:Name="tbIter" TextChanged="tbIteration_TextChanged" Padding="0"></TextBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Next Show Date" Binding="{Binding next_show_date}">
+                    <DataGridTextColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="ContentTemplate">
+                                <Setter.Value>
+                                    <DataTemplate>
+                                        <Border Margin="-3,-5,-3,-2">
+                                            <StackPanel Orientation="Vertical" Width="{Binding Path=DataColWidth, ElementName=db_window, Mode=Default}">
+                                                <Label Content="Next Show Date" HorizontalAlignment="Center" Padding="1"/>
+                                                <TextBox x:Name="tbDate" TextChanged="tbDate_TextChanged" Padding="0"></TextBox>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGridTextColumn.HeaderStyle>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Style.Triggers>
+                                <!--<MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding next_show_date, Converter={StaticResource IsDateInPastConverter}}" Value="True"/>
+                                        <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=Foreground}" Value="#FF000000"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background" Value="#E9FFF7"/>
+                                </MultiDataTrigger>-->
+                                <DataTrigger Binding="{Binding next_show_date, Converter={StaticResource IsDateInPastConverter}}" Value="True">
+                                    <Setter Property="Background" Value="#DBF9E8"/>
+                                    <Setter Property="Foreground" Value="#000000"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </dg1:DataGrid>
+    </Grid>
+</Window>

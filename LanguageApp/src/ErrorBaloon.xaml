@@ -1,0 +1,33 @@
+﻿<UserControl x:Class="LanguageApp.src.ErrorBaloon"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             Height="130" Width="220">
+    <Grid x:Name="grid">
+        <!--do not close baloon if mouse hover-->
+        <Border HorizontalAlignment="Stretch"
+                Margin="5,5,5,0"
+                BorderThickness="1,1,1,1"
+                BorderBrush="#FF303060"
+                Background="#FFFFFFDD">
+        </Border>
+        <Label Content="Nothing to display!" Margin="0,15,10,0" FontSize="16" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top" />
+        <Label Content="Please add more words to database" Margin="0,60,0,0" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Top" />
+        <Button x:Name="OkButton"
+                    Content=" OK "
+                    Click="OnOkButtonClick"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,10,11" IsCancel="True" />
+        <Image HorizontalAlignment="Left"
+               VerticalAlignment="Top"
+               Margin="10,10,0,0"
+               Width="45"
+               Height="40"
+               Source="/Images/Warning2.png"
+               Stretch="Fill"
+               x:Name="imgClose"/>
+    </Grid>
+</UserControl>
