@@ -132,7 +132,7 @@ namespace LanguageApp {
             DictionaryItem randomItem;
 
             if (currentWordsList.Count > 0) {
-                logger.Debug("Show words queue: " + listToString(alreadyShowedWordsQueue));
+                //logger.Debug("Show words queue: " + listToString(alreadyShowedWordsQueue));
                 //select random word and return it
                 do {
                     int randomIndex = random.Next(0, currentWordsList.Count);

@@ -12,6 +12,18 @@
         <namespace:IsDateInPastConverter x:Key="IsDateInPastConverter" />
     </Window.Resources>
     <Grid>
+        <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal" Margin="5,0,0,0">
+                <Label Content="Words to learn: " HorizontalAlignment="Center" Padding="0.2" FontSize="10" Foreground="Gray"/>
+                <Label HorizontalAlignment="Center"  Padding="0.2" FontSize="10" Foreground="Gray"
+                       Content="{Binding Path=NumberOfRecordsToLearn, ElementName=db_window, Mode=Default}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="5,0,0,0">
+                <Label Content="Words to repeat: " HorizontalAlignment="Center" Padding="0.2" FontSize="10" Foreground="Gray"/>
+                <Label HorizontalAlignment="Center"  Padding="0.2" FontSize="10" Foreground="Gray"
+                       Content="{Binding Path=NumberOfRecordsToRepeat, ElementName=db_window, Mode=Default}"/>
+            </StackPanel>
+        </StackPanel>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Height="42" VerticalAlignment="Top" Width="170">
             <Button x:Name = "DeleteButton"  
             Content = "Delete row" 
