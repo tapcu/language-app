@@ -2,6 +2,7 @@
 using System.Data;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace LanguageApp.src {
     public partial class DatabaseWindow : Window {
@@ -131,19 +132,37 @@ namespace LanguageApp.src {
         }
 
         /*
-         * DELETE BUTTON, will remove row from table (not from database)
+         * DELETE BUTTON, will remove row from table (not from database, changes need to be saved)
          */
         private void OnDeleteButtonClick(object sender, RoutedEventArgs e) {
-            ((DataRowView)(testGrid.SelectedItem)).Row.Delete();
+            DataRowView item = (DataRowView)testGrid.SelectedItem;
+            if (item != null) {
+                item.Row.Delete();
+            } else {
+                MessageBox.Show("Please choose a word to delete",
+                                "Warning",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                Keyboard.ClearFocus();
+            }
         }
 
         /*
          * RESET BUTTON, will reset the word to the unlearned state
          */
         private void OnResetButtonClick(object sender, RoutedEventArgs e) {
-            ((DataRowView)(testGrid.SelectedItem)).Row.SetField(3,0);
-            ((DataRowView)(testGrid.SelectedItem)).Row.SetField(4,0);
-            ((DataRowView)(testGrid.SelectedItem)).Row.SetField(5,DBNull.Value);
+            DataRowView item = (DataRowView)testGrid.SelectedItem;
+            if (item != null) {
+                item.Row.SetField(3, 0);
+                item.Row.SetField(4, 0);
+                item.Row.SetField(5, DBNull.Value);
+            } else {
+                MessageBox.Show("Please choose a word to reset",
+                                "Warning",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                Keyboard.ClearFocus();
+            }
         }
 
         private void tbId_TextChanged(object sender, RoutedEventArgs e) {
