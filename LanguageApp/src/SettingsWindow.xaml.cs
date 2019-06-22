@@ -25,14 +25,23 @@ namespace LanguageApp.src
         private int bottomMargin = 40;
 
         private int initialShowInterval = 0;
+        private int initialDaysInterval = 0;
         private String initialDatabasePath = null;
         
         #region ShowInterval dependency property
         public static readonly DependencyProperty ShowIntervalProperty =
-            DependencyProperty.Register("ShowInterval",typeof(String),typeof(SettingsWindow));
+            DependencyProperty.Register("ShowInterval" ,typeof(String), typeof(SettingsWindow));
         public Double ShowInterval {
             get { return (Double)GetValue(ShowIntervalProperty); }
             set { SetValue(ShowIntervalProperty, value); }
+        }
+        #endregion
+        #region DaysInterval dependency property
+        public static readonly DependencyProperty DaysIntervalProperty =
+            DependencyProperty.Register("DaysInterval", typeof(Int32), typeof(SettingsWindow));
+        public Int32 DaysInterval {
+            get { return (Int32)GetValue(DaysIntervalProperty); }
+            set { SetValue(DaysIntervalProperty, value); }
         }
         #endregion
 
@@ -43,13 +52,15 @@ namespace LanguageApp.src
             logger.Info("Getting current config values");
             config = Config.getInstance();
             initialShowInterval = config.ShowInterval;
+            initialDaysInterval = config.DaysInterval;
             initialDatabasePath = config.DatabasePath;
+
+            ShowIntervalValue = initialShowInterval;
+            DaysInterval = initialDaysInterval;
             dbNameFld.Text = initialDatabasePath;
 
             this.Left = SystemParameters.PrimaryScreenWidth - (this.Width + rightMargin);
             this.Top = SystemParameters.PrimaryScreenHeight - (this.Height + bottomMargin);
-
-            ShowIntervalValue = config.ShowInterval;
         }
 
         private void OnSaveButtonClick(object sender, RoutedEventArgs e) {
@@ -64,6 +75,24 @@ namespace LanguageApp.src
                     settingsChanged = true;
                     logger.Debug("update config show interval to " + parsedVal.TotalSeconds);
                     config.ShowInterval = (int)parsedVal.TotalSeconds;
+                }
+            }
+            //check if DAYS INTERVAL value should be updated in config file
+            if (daysInterval.Text != null && !(daysInterval.Text.Length == 0)) {
+                Int32 parsedDayInterval = 0;
+                bool tryParseResult = Int32.TryParse(daysInterval.Text, out parsedDayInterval);
+                if (tryParseResult == false) { //text parsing goes wrong
+                    logger.Error("Days intervals field parsing goes worng! The text was: " + daysInterval.Text);
+                    MessageBoxResult result = MessageBox.Show("Cannot parse value " + daysInterval.Text + " as number!",
+                                               "Error",
+                                               MessageBoxButton.OK,
+                                               MessageBoxImage.Error);
+                    return;
+                }
+                if (parsedDayInterval != 0 && parsedDayInterval != initialDaysInterval) {
+                    settingsChanged = true;
+                    logger.Debug("update config days interval to " + parsedDayInterval);
+                    config.DaysInterval = parsedDayInterval;
                 }
             }
             //check if DATABASE NAME value should be updated in config file

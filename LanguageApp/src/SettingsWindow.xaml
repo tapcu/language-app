@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" Icon="/Icons/Preferences.ico"
+        x:Name="mainWindow"
         Title="Settings" Height="203.672" Width="257.761">
     <Grid>
         <Label Content="Show word interval:" Margin="0,8,0,0" Height="28" HorizontalAlignment="Left" VerticalAlignment="Top" />
@@ -14,16 +15,19 @@
                 <Button x:Name="cmdDown" Margin="0,1,0,0" Content="˅" FontSize="8" Height="13" Width="15" Click="CmdDown_Click" />
             </StackPanel>
         </StackPanel>
-        <Label Content="Database name:" Margin="0,40,0,0" Height="28" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="Database name:" Margin="0,70,0,0" Height="28" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <TextBox
             x:Name="dbNameFld"
-            Margin="100,45,30,0"
+            Margin="109,71,21,0"
             VerticalAlignment="Top"
             Height="22"
             TextWrapping="Wrap"/>
-        <Button Content="..." HorizontalAlignment="Right" Margin="0,45,5,0"
-                Name="browseBtn" VerticalAlignment="Top" Width="21" Click="browseBtn_Click" />
-        
+        <Button Content="..." HorizontalAlignment="Right" Margin="0,71,0,0"
+                Name="browseBtn" VerticalAlignment="Top" Width="21" Click="browseBtn_Click" RenderTransformOrigin="0.556,0.803" />
+        <Label Content="Pause before re-show word:" Margin="0,39,0,0" Height="28" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <TextBox x:Name="daysInterval" Text="{Binding Path=DaysInterval, ElementName=mainWindow, Mode=Default}" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="163,41,0,0" Height="20" Width="30"/>
+        <Label Content="days" Margin="193,41,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.118,0.464" />
+
         <Button x:Name = "SaveButton"  
             Content = "Save" 
             Click = "OnSaveButtonClick"

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Data.SQLite;
 using System.Data;
+using Newtonsoft.Json;
 
 namespace LanguageApp.src {
     class DatabaseHandler {
@@ -31,8 +32,6 @@ namespace LanguageApp.src {
                 "`next_show_date`	TEXT," +
                 "`last_update_date`	TEXT); ";
 
-            string alter_sql = "ALTER TABLE `words` ADD COLUMN last_update_date TEXT";
-
             try {
                 openConnection();
                 SQLiteCommand createSQL = new SQLiteCommand(sql, dbConnection);
@@ -45,12 +44,13 @@ namespace LanguageApp.src {
                 }
 
                 //try to add column last_update_date, because on some databases it could be missed
-                try {
-                    SQLiteCommand alterSQL = new SQLiteCommand(alter_sql, dbConnection);
-                    alterSQL.ExecuteNonQuery();
-                } catch (SQLiteException ignored) {
-                    logger.Debug("column LAST_UPDATE_DATE already exists in table WORDS");
-                }
+                //string alter_sql = "ALTER TABLE `words` ADD COLUMN last_update_date TEXT";
+                //try {
+                //    SQLiteCommand alterSQL = new SQLiteCommand(alter_sql, dbConnection);
+                //    alterSQL.ExecuteNonQuery();
+                //} catch (SQLiteException ignored) {
+                //    logger.Debug("column LAST_UPDATE_DATE already exists in table WORDS");
+                //}
 
             } finally {
                 closeConnection();
@@ -76,6 +76,10 @@ namespace LanguageApp.src {
             if (dbConnection!=null)
                 dbConnection.Close();
         }
+
+
+        /*------------------------------------------------------S-E-L-E-C-T--------------------------------------*/
+
 
         public List<DictionaryItem> getAllWords() {
             logger.Trace("Get all awailable words from databae");
@@ -150,6 +154,94 @@ namespace LanguageApp.src {
 
             return wordPairsList;
         }
+
+        public DataSet getAllDataAsDataSet() {
+            logger.Trace("get all data from database as data set");
+
+            string sql = "select * from words";
+
+            DataSet allWordsDS = new DataSet();
+            try {
+                openConnection();
+                SQLiteCommand getTables = new SQLiteCommand(sql, dbConnection);
+                SQLiteDataAdapter myCountAdapter = new SQLiteDataAdapter(getTables);
+                myCountAdapter.Fill(allWordsDS, "Words");
+            } catch (Exception ex) {
+                logger.Error(ex, "Error while getting all words from database as DataSet");
+                throw new Exception(ex.Message);
+            } finally {
+                closeConnection();
+            }
+
+            return allWordsDS;
+        }
+
+        public DataTable getAllDataAsDataTable() {
+            logger.Trace("get all data from database as dataTable");
+
+            string sql = "select * from words";
+
+            DataTable dataTable = new DataTable();
+            try {
+                openConnection();
+                SQLiteCommand getTables = new SQLiteCommand(sql, dbConnection);
+                SQLiteDataAdapter myCountAdapter = new SQLiteDataAdapter(getTables);
+                myCountAdapter.Fill(dataTable);
+            } catch (Exception ex) {
+                logger.Error(ex, "Error while getting all words from database as DataTable");
+                throw new Exception(ex.Message);
+            } finally {
+                closeConnection();
+            }
+
+            return dataTable;
+        }
+
+        public String getAllDataAsJson() {
+            logger.Trace("get all data from database as JSON");
+
+            string sql = "select * from words";
+            String resultJson;
+
+            try {
+                openConnection();
+                SQLiteCommand command = new SQLiteCommand(sql, dbConnection);
+                SQLiteDataReader reader = command.ExecuteReader();
+                var r = Serialize(reader);
+
+                resultJson = JsonConvert.SerializeObject(r, Formatting.Indented);
+            } catch (Exception ex) {
+                logger.Error(ex, "Error while getting all words from database as DataSet");
+                throw new Exception(ex.Message);
+            } finally {
+                closeConnection();
+            }
+
+            return resultJson;
+        }
+
+        private IEnumerable<Dictionary<string, object>> Serialize(SQLiteDataReader reader) {
+            var results = new List<Dictionary<string, object>>();
+            var cols = new List<string>();
+            for (var i = 0; i < reader.FieldCount; i++)
+                cols.Add(reader.GetName(i));
+
+            while (reader.Read())
+                results.Add(SerializeRow(cols, reader));
+
+            return results;
+        }
+        private Dictionary<string, object> SerializeRow(IEnumerable<string> cols,
+                                                        SQLiteDataReader reader) {
+            var result = new Dictionary<string, object>();
+            foreach (var col in cols)
+                result.Add(col, reader[col]);
+            return result;
+        }
+
+
+        /*------------------------------------------------------U-P-D-A-T-E-------------------------------------------------*/
+
 
         /*
          * update iteration for the list of IDs
@@ -283,48 +375,6 @@ namespace LanguageApp.src {
 
         }
 
-        public DataSet getAllDataAsDataSet() {
-            logger.Trace("get all data from database as data set");
-
-            string sql = "select * from words";
-
-            DataSet allWordsDS = new DataSet();
-            try {
-                openConnection();
-                SQLiteCommand getTables = new SQLiteCommand(sql, dbConnection);
-                SQLiteDataAdapter myCountAdapter = new SQLiteDataAdapter(getTables);
-                myCountAdapter.Fill(allWordsDS, "Words");
-            } catch (Exception ex) {
-                logger.Error(ex, "Error while getting all words from database as DataSet");
-                throw new Exception(ex.Message);
-            } finally {
-                closeConnection();
-            }
-
-            return allWordsDS;
-        }
-
-        public DataTable getAllDataAsDataTable() {
-            logger.Trace("get all data from database as dataTable");
-
-            string sql = "select * from words";
-
-            DataTable dataTable = new DataTable();
-            try {
-                openConnection();
-                SQLiteCommand getTables = new SQLiteCommand(sql, dbConnection);
-                SQLiteDataAdapter myCountAdapter = new SQLiteDataAdapter(getTables);
-                myCountAdapter.Fill(dataTable);
-            } catch (Exception ex) {
-                logger.Error(ex, "Error while getting all words from database as DataTable");
-                throw new Exception(ex.Message);
-            } finally {
-                closeConnection();
-            }
-
-            return dataTable;
-        }
-
         public void UpdateTableFromDataTable(DataTable dt) {
             logger.Trace("Updating table from dataTable");
 
@@ -345,9 +395,66 @@ namespace LanguageApp.src {
 
         }
 
+        /*
+         * UPSERTS the world in database, if not exists - insert it, if exists - update, but only if last_update_date is bigger
+         */
+        public void upsertWord(DictionaryItem item) {
+            logger.Trace("upserting one word, id: " + item.Id);
+
+            try {
+                openConnection();
+                SQLiteCommand updateSQL = new SQLiteCommand(
+                    "INSERT INTO words(id, word, translation, correct_answers, iteration, next_show_date, last_update_date) " +
+                    "VALUES(@id,@word,@tran,@answ,@iter,@nextDate,@updateDate) " +
+                    "ON CONFLICT(id) DO UPDATE SET " +
+                    "word = excluded.word, " +
+                    "translation = excluded.translation, " +
+                    "correct_answers = excluded.correct_answers, " +
+                    "iteration = excluded.iteration, " +
+                    "next_show_date = excluded.next_show_date " +
+                    "last_update_date = excluded.last_update_date " +
+                    "WHERE (id = @id) and (last_update_date <= excluded.last_update_date) ", dbConnection);
+
+                updateSQL.Parameters.AddWithValue("@word", item.Word);
+                updateSQL.Parameters.AddWithValue("@tran", item.Translation);
+                updateSQL.Parameters.AddWithValue("@answ", item.CorrectAnswers);
+                updateSQL.Parameters.AddWithValue("@iter", item.Iteration);
+                updateSQL.Parameters.AddWithValue("@id", item.Id);
+
+                DateTime nextDate = item.NextShowDate;
+                if (!Object.Equals(nextDate, default(DateTime))) { //if date != null
+                    string nextDateStr = nextDate.ToString("yyyy-MM-dd HH:mm:ss");
+                    updateSQL.Parameters.AddWithValue("@nextDate", nextDateStr);
+                } else {
+                    updateSQL.Parameters.AddWithValue("@nextDate", null);
+                }
+
+                DateTime lastUpdateDate = item.LastUpdateDate;
+                if (!Object.Equals(lastUpdateDate, default(DateTime))) { //if date != null
+                    string lastUpdateDateStr = lastUpdateDate.ToString("yyyy-MM-dd HH:mm:ss");
+                    updateSQL.Parameters.AddWithValue("@updateDate", lastUpdateDateStr);
+                } else {
+                    updateSQL.Parameters.AddWithValue("@updateDate", null);
+                }
+
+                updateSQL.ExecuteNonQuery();
+
+            } catch (Exception ex) {
+                logger.Error(ex, "Error while upserting word with ID " + item.Id);
+                throw new Exception(ex.Message);
+            } finally {
+                closeConnection();
+            }
+        }
+
+        /*
+         * temporary function? I just need to be sure, that database path is actual. It can be changed in config.
+         */
         public void updateDatabasePath(String databasePath) {
-            logger.Trace("update database path for db handler to " + databasePath);
-            DatabasePath = databasePath;
+            if (!databasePath.Equals(DatabasePath)) {
+                logger.Trace("update database path for db handler to " + databasePath);
+                DatabasePath = databasePath;
+            }
         }
     }
 }

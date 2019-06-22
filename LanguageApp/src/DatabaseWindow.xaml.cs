@@ -137,6 +137,15 @@ namespace LanguageApp.src {
             ((DataRowView)(testGrid.SelectedItem)).Row.Delete();
         }
 
+        /*
+         * RESET BUTTON, will reset the word to the unlearned state
+         */
+        private void OnResetButtonClick(object sender, RoutedEventArgs e) {
+            ((DataRowView)(testGrid.SelectedItem)).Row.SetField(3,0);
+            ((DataRowView)(testGrid.SelectedItem)).Row.SetField(4,0);
+            ((DataRowView)(testGrid.SelectedItem)).Row.SetField(5,DBNull.Value);
+        }
+
         private void tbId_TextChanged(object sender, RoutedEventArgs e) {
             var textBox = sender as TextBox;
             if (textBox.Text.Length == 0) {

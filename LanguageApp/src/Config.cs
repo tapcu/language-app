@@ -60,9 +60,11 @@ namespace LanguageApp.src {
 #if DEBUG
             instance.ShowInterval = Const.DEBUG_INTERVAL;
             instance.DatabasePath = Const.DEBUG_DATABASE;
+            instance.DaysInterval = Const.DAYS_INTERVAL;
 #else
             instance.ShowInterval = Const.RELEASE_INTERVAL;
             instance.DatabasePath = Const.RELEASE_DATABASE;
+            instance.DaysInterval = Const.DAYS_INTERVAL;
 #endif
         }
 

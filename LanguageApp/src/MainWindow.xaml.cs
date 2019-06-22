@@ -62,6 +62,9 @@ namespace LanguageApp {
 
                 tooltipTimer = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Normal, OnTooltipTimerTick, Application.Current.Dispatcher);
 
+            //DictionaryItem item = new DictionaryItem(9, "cios2", "удар", 7, 3, "2019-05-01 23:46:14", "2019-06-01 23:46:14");
+            //dbHandler.upsertWord(item);
+
 #if !DEBUG //show error message only in RELEASE mod
             } catch (Exception e) {
                 logger.Error(e.Message);
@@ -99,10 +102,13 @@ namespace LanguageApp {
          * show a tooltip, which contains countdown till next message shows
          */
         private void OnTooltipTimerTick(object sender, EventArgs e) {
+            logger.Trace("tooltipTimer: tick");
             if (mainTimer.IsEnabled != isMainTimerEnabled) {
+                logger.Trace("tooltipTimer: reset time left counter");
                 timeLeftCounter = config.ShowInterval-1;
                 isMainTimerEnabled = mainTimer.IsEnabled;
             } else if (configOldInterval != config.ShowInterval) {
+                logger.Trace("tooltipTimer: reset time left couonter because of config change");
                 mainTimer.Interval = TimeSpan.FromSeconds(config.ShowInterval);
                 mainTimer.Start();
                 timeLeftCounter = config.ShowInterval;
@@ -174,11 +180,12 @@ namespace LanguageApp {
                 dItem.CorrectAnswers = dItem.CorrectAnswers + 1;                    
 
                 if (dItem.Iteration >= 2) {  //started with 2nd iteration needed only one correct answer to proof that user know the word
-                    dItem.NextShowDate = DateTime.Now.AddDays(dItem.Iteration * Const.DAYS_INTERVAL);
+                    dItem.NextShowDate = DateTime.Now.AddDays(dItem.Iteration * config.DaysInterval);
                     dItem.Iteration = dItem.Iteration + 1;
                 } else if (dItem.CorrectAnswers % Const.ITERATION_THRESHOLD == 0) { //num of correct answers on this iteration = new interation threshold
-                        if(dItem.Iteration == 1) //second iteration will start after a time gap
-                            dItem.NextShowDate = DateTime.Now.AddDays(dItem.Iteration * Const.DAYS_INTERVAL);
+                        if (dItem.Iteration == 1) { //second iteration will start after a time gap of config.DaysInterval
+                            dItem.NextShowDate = DateTime.Now.AddDays(config.DaysInterval);
+                        }
                         dItem.Iteration = dItem.Iteration + 1;
                     }
 
@@ -229,8 +236,18 @@ namespace LanguageApp {
 
         private void OnSettingsMenuItemClick(object sender, RoutedEventArgs e) {
             if (settingsWindow != null) settingsWindow.Close();
+            if (settingsWindow != null) settingsWindow.Close();
             settingsWindow = new SettingsWindow();
             ShowNewWindow(settingsWindow);
+        }
+
+        private void OnSynchronizeMenuItemClick(object sender, RoutedEventArgs e) {
+            logger.Info("getting all data from db as json");
+            String jsonStr = dbHandler.getAllDataAsJson();
+            jsonStr = "{\"words\": " + jsonStr + " }";
+            logger.Info("sending data to server, data length is " + jsonStr.Length);
+            if(jsonStr.Length > 0)
+                Synchronizator.sendRequestAsync(jsonStr);
         }
 
         private void ShowNewWindow(Window window) {

@@ -12,8 +12,9 @@ namespace LanguageApp.src {
         private int correctAnswers;
         private int iteration;
         private DateTime nextShowDate;
+        private DateTime lastUpdateDate;
 
-        public DictionaryItem(int id, string word, string translation, int correctAnswers = 0, int iteration = 0, String nextDate = null) {
+        public DictionaryItem(int id, string word, string translation, int correctAnswers = 0, int iteration = 0, String nextDate = null, String lastUpdateDate = null) {
             this.id = id;
             this.word = word;
             this.translation = translation;
@@ -25,6 +26,12 @@ namespace LanguageApp.src {
                 } catch (Exception ex) {
                     Console.WriteLine("Error with parsing date: " + nextDate + ": " + ex.Message);
                 }
+            if (lastUpdateDate != "")
+                try {
+                    this.lastUpdateDate = DateTime.Parse(lastUpdateDate);
+                } catch (Exception ex) {
+                    Console.WriteLine("Error with parsing date: " + lastUpdateDate + ": " + ex.Message);
+                }
         }
 
         //getters and setters
@@ -34,5 +41,6 @@ namespace LanguageApp.src {
         public int CorrectAnswers { get => correctAnswers; set => correctAnswers = value; }
         public int Iteration { get => iteration; set => iteration = value; }
         public DateTime NextShowDate { get => nextShowDate; set => nextShowDate = value; }
+        public DateTime LastUpdateDate { get => lastUpdateDate; set => lastUpdateDate = value; }
     }
 }
