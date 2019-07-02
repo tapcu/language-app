@@ -154,7 +154,7 @@ namespace LanguageApp.src {
             DataRowView item = (DataRowView)testGrid.SelectedItem;
             if (item != null) {
                 item.Row.SetField(3, 0);
-                item.Row.SetField(4, 0);
+                item.Row.SetField(4, -1);
                 item.Row.SetField(5, DBNull.Value);
             } else {
                 MessageBox.Show("Please choose a word to reset",

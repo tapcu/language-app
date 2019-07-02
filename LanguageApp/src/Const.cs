@@ -13,6 +13,8 @@ namespace LanguageApp.src {
         public static string DEBUG_CONFIG_FILE = "W:\\c#\\MyApp\\LanguageApp\\LanguageApp\\config.json";
         public static string CONFIG_FILE = "config.json";
 
+        public static string SERVER_URL = "http://localhost:3000/sync";
+
         public static int ITERATION_THRESHOLD = 3;
         public static int DAYS_INTERVAL = 7;
     }

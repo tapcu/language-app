@@ -4,6 +4,7 @@ using System.Text;
 using System.Data.SQLite;
 using System.Data;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace LanguageApp.src {
     class DatabaseHandler {
@@ -17,6 +18,26 @@ namespace LanguageApp.src {
 
             this.DatabasePath = databaseName;
             createWordsTableIfNotExists();
+        }
+
+        private void openConnection() {
+            try {
+                if (DatabasePath == null || DatabasePath.Length == 0)
+                    throw new Exception("Database name cannot be empty!");
+                dbConnection = new SQLiteConnection("Data Source=" + DatabasePath + ";Version=3;");
+                dbConnection.Open();
+                logger.Trace("Database connection opened");
+            } catch (Exception ex) {
+                logger.Error("Error while open database connection");
+                logger.Error(ex);
+                throw new Exception(ex.Message);
+            }
+        }
+
+        private void closeConnection() {
+            logger.Trace("Database connection closed");
+            if (dbConnection != null)
+                dbConnection.Close();
         }
 
         //check if table "words" exists, if not, create it
@@ -55,26 +76,6 @@ namespace LanguageApp.src {
             } finally {
                 closeConnection();
             }
-        }
-
-        private void openConnection() {
-            try {
-                if (DatabasePath == null || DatabasePath.Length == 0)
-                    throw new Exception("Database name cannot be empty!");
-                dbConnection = new SQLiteConnection("Data Source=" + DatabasePath + ";Version=3;");
-                dbConnection.Open();
-                logger.Trace("Database connection opened");
-            } catch (Exception ex) {
-                logger.Error("Error while open database connection");
-                logger.Error(ex);
-                throw new Exception(ex.Message);
-            }
-        }
-
-        private void closeConnection() {
-            logger.Trace("Database connection closed");
-            if (dbConnection!=null)
-                dbConnection.Close();
         }
 
 
@@ -444,6 +445,213 @@ namespace LanguageApp.src {
                 throw new Exception(ex.Message);
             } finally {
                 closeConnection();
+            }
+        }
+
+
+
+        /*--------------------------------------------S-P-E-C-I-F-I-C---P-A-T-H-------------------------------*/
+
+
+        private SQLiteConnection openConnection(String path) {
+            try {
+                if (path == null || path.Length == 0)
+                    throw new Exception("Database name cannot be empty!");
+                SQLiteConnection connection = new SQLiteConnection("Data Source=" + path + ";Version=3;");
+                connection.Open();
+                SQLiteCommand createSQL = new SQLiteCommand("pragma synchronous = off;", connection);
+                createSQL.ExecuteNonQuery();
+                logger.Trace("Database connection opened");
+                return connection;
+            } catch (Exception ex) {
+                logger.Error("Error while open database connection");
+                logger.Error(ex);
+                throw new Exception(ex.Message);
+            }
+        }
+
+        private void closeConnection(SQLiteConnection connection) {
+            logger.Trace("Database connection closed");
+            if (connection != null)
+                connection.Close();
+        }
+
+        //drop table if exists
+        private void dropWordsTableIfExists(SQLiteConnection connection) {
+            string sql = "DROP TABLE IF EXISTS `words`";
+
+            SQLiteCommand createSQL = new SQLiteCommand(sql, connection);
+            try {
+                createSQL.ExecuteNonQuery();
+            } catch (Exception ex) {
+                logger.Error("Error while drop WORDS table in database");
+                logger.Error(ex);
+                throw new Exception(ex.Message);
+            }
+        }
+
+        //check if table "words" exists, if not, create it
+        //if table already exists, try to add new column to it (last_update_date) - for backward compatibility
+        private void createWordsTableIfNotExists(SQLiteConnection connection) {
+            string sql =
+                "CREATE TABLE IF NOT EXISTS `words` (" +
+                "`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
+                "`word`	TEXT NOT NULL UNIQUE," +
+                "`translation`	TEXT," +
+                "`correct_answers`	INTEGER DEFAULT 0," +
+                "`iteration`	INTEGER DEFAULT -1," +
+                "`next_show_date`	TEXT," +
+                "`last_update_date`	TEXT); ";
+
+            SQLiteCommand createSQL = new SQLiteCommand(sql, connection);
+            try {
+                createSQL.ExecuteNonQuery();
+            } catch (Exception ex) {
+                logger.Error("Error while creating WORDS table in database");
+                logger.Error(ex);
+                throw new Exception(ex.Message);
+            }
+        }
+
+        /*
+         * insert new word into table
+         */
+        private void insertWord(SQLiteConnection connection, DictionaryItem item) {
+            //logger.Debug("inserting one word, id: " + item.Id);
+            DateTime dt = DateTime.Now;
+            try {
+                SQLiteCommand updateSQL = new SQLiteCommand(
+                    "INSERT INTO words(id, word, translation, correct_answers, iteration, next_show_date, last_update_date) " +
+                    "VALUES(@id,@word,@tran,@answ,@iter,@nextDate,@updateDate) ", connection);
+
+                updateSQL.Parameters.AddWithValue("@id", item.Id);
+                updateSQL.Parameters.AddWithValue("@word", item.Word);
+                updateSQL.Parameters.AddWithValue("@tran", item.Translation);
+                updateSQL.Parameters.AddWithValue("@answ", item.CorrectAnswers);
+                updateSQL.Parameters.AddWithValue("@iter", item.Iteration);
+
+                DateTime nextDate = item.NextShowDate;
+                if (!Object.Equals(nextDate, default(DateTime))) { //if date != null
+                    string nextDateStr = nextDate.ToString("yyyy-MM-dd HH:mm:ss");
+                    updateSQL.Parameters.AddWithValue("@nextDate", nextDateStr);
+                } else {
+                    updateSQL.Parameters.AddWithValue("@nextDate", null);
+                }
+
+                DateTime lastUpdateDate = item.LastUpdateDate;
+                if (!Object.Equals(lastUpdateDate, default(DateTime))) { //if date != null
+                    string lastUpdateDateStr = lastUpdateDate.ToString("yyyy-MM-dd HH:mm:ss");
+                    updateSQL.Parameters.AddWithValue("@updateDate", lastUpdateDateStr);
+                } else {
+                    updateSQL.Parameters.AddWithValue("@updateDate", null);
+                }
+
+                updateSQL.ExecuteNonQuery();
+                TimeSpan ts = DateTime.Now - dt;
+                Console.WriteLine("inserting took: " + ts);
+
+            } catch (Exception ex) {
+                logger.Error(ex, "Error while inserting word with ID " + item.Id);
+                throw new Exception(ex.Message);
+            }
+        }
+
+        /*
+         * insert new word into table
+         */
+        private void insertWord2(SQLiteConnection connection, string jsonStr) {
+            DateTime dt = DateTime.Now;
+            try {
+                using (var transaction = connection.BeginTransaction())
+                using (var command = connection.CreateCommand()) {
+                    command.CommandText =
+                        "INSERT INTO words(id, word, translation, correct_answers, iteration, next_show_date, last_update_date) " +
+                        "VALUES($id,$word,$tran,$answ,$iter,$nextDate,$updateDate);";
+
+                    var idParameter = command.CreateParameter();
+                    idParameter.ParameterName = "$id";
+                    command.Parameters.Add(idParameter);
+
+                    var wordParameter = command.CreateParameter();
+                    wordParameter.ParameterName = "$word";
+                    command.Parameters.Add(wordParameter);
+
+                    var tranParameter = command.CreateParameter();
+                    tranParameter.ParameterName = "$tran";
+                    command.Parameters.Add(tranParameter);
+
+                    var answParameter = command.CreateParameter();
+                    answParameter.ParameterName = "$answ";
+                    command.Parameters.Add(answParameter);
+
+                    var iterParameter = command.CreateParameter();
+                    iterParameter.ParameterName = "$iter";
+                    command.Parameters.Add(iterParameter);
+
+                    var nextDateParameter = command.CreateParameter();
+                    nextDateParameter.ParameterName = "$nextDate";
+                    command.Parameters.Add(nextDateParameter);
+
+                    var updateDateParameter = command.CreateParameter();
+                    updateDateParameter.ParameterName = "$updateDate";
+                    command.Parameters.Add(updateDateParameter);
+
+                    JArray parserdJsonArr = JArray.Parse(jsonStr);
+                    foreach (JObject wordItem in parserdJsonArr.Children<JObject>()) {
+                        idParameter.Value = (int)wordItem["id"];
+                        wordParameter.Value = (String)wordItem["word"];
+                        tranParameter.Value = (String)wordItem["translation"];
+                        answParameter.Value = (int)wordItem["correct_answers"];
+                        iterParameter.Value = (int)wordItem["iteration"];
+
+                        if (wordItem["next_show_date"] != null)
+                            nextDateParameter.Value = (String)wordItem["next_show_date"];
+                        else nextDateParameter.Value = DBNull.Value;
+
+                        if (wordItem["last_update_date"] != null)
+                            updateDateParameter.Value = (String)wordItem["last_update_date"];
+                        else updateDateParameter.Value = DBNull.Value;
+
+                        command.ExecuteNonQuery();
+                    }
+
+                    transaction.Commit();
+                    TimeSpan ts = DateTime.Now - dt;
+                    Console.WriteLine("inserting took: " + ts);
+                }
+            } catch (Exception ex) {
+                logger.Error(ex, "Error while inserting words from json");
+                throw new Exception(ex.Message);
+            }
+        }
+
+
+        public void createDatabaseFileBasedOnJson(String jsonStr, String path) {
+            DateTime dt = DateTime.Now;
+            logger.Info("Start to create database file " + path + " based on json");
+
+            SQLiteConnection connection = openConnection(path);
+            try {
+                dropWordsTableIfExists(connection);
+                createWordsTableIfNotExists(connection);
+                insertWord2(connection, jsonStr);
+                //JArray parserdJsonArr = JArray.Parse(jsonStr);
+                //foreach (JObject wordItem in parserdJsonArr.Children<JObject>()) {
+                //    int id = (int)wordItem["id"];
+                //    string word = (string)wordItem["word"];
+                //    string translation = (string)wordItem["translation"];
+                //    int correct_answers = (int)wordItem["correct_answers"];
+                //    int iteration = (int)wordItem["iteration"];
+                //    string next_show_date = (string)wordItem["next_show_date"];
+                //    string last_update_date = (string)wordItem["last_update_date"];
+                //    DictionaryItem item = new DictionaryItem(id, word, translation, correct_answers, iteration, next_show_date, last_update_date);
+                //    insertWord(connection, item);
+                //}
+                logger.Info("Finish creation of database file at path: " + path);
+            } finally {
+                closeConnection(connection);
+                TimeSpan ts = DateTime.Now - dt;
+                Console.WriteLine("database creation took: " + ts);
             }
         }
 

@@ -19,6 +19,7 @@ namespace LanguageApp.src {
         public int IterationThreshold { get; set; }
         public int DaysInterval { get; set; }
         public string DatabasePath { get; set; }
+        public string ServerUrl { get; set; }
 
         private Config() { }
 
@@ -61,10 +62,12 @@ namespace LanguageApp.src {
             instance.ShowInterval = Const.DEBUG_INTERVAL;
             instance.DatabasePath = Const.DEBUG_DATABASE;
             instance.DaysInterval = Const.DAYS_INTERVAL;
+            instance.ServerUrl = Const.SERVER_URL;
 #else
             instance.ShowInterval = Const.RELEASE_INTERVAL;
             instance.DatabasePath = Const.RELEASE_DATABASE;
             instance.DaysInterval = Const.DAYS_INTERVAL;
+            instance.ServerUrl = Const.SERVER_URL;
 #endif
         }
 
@@ -88,7 +91,8 @@ namespace LanguageApp.src {
                 "\"Show next word interval\": " + instance.ShowInterval + " sec, " +
                 "\"Iteration threshold\": " + instance.IterationThreshold + " day(s), " +
                 "\"Show word next time interval\": " + instance.DaysInterval + " day(s), " +
-                "\"Database path\": " + instance.DatabasePath;
+                "\"Database path\": " + instance.DatabasePath +
+                "\"Server url\": " + instance.ServerUrl;
             return configStr;
         }
     }

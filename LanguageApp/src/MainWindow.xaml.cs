@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using Hardcodet.Wpf.TaskbarNotification;
 using LanguageApp.src;
 using System.Text;
+using System.Reflection;
 
 namespace LanguageApp {
     /// <summary>
@@ -241,13 +242,39 @@ namespace LanguageApp {
             ShowNewWindow(settingsWindow);
         }
 
-        private void OnSynchronizeMenuItemClick(object sender, RoutedEventArgs e) {
+        private void OnSynchronizeOutMenuItemClick(object sender, RoutedEventArgs e) {
             logger.Info("getting all data from db as json");
             String jsonStr = dbHandler.getAllDataAsJson();
             jsonStr = "{\"words\": " + jsonStr + " }";
             logger.Info("sending data to server, data length is " + jsonStr.Length);
             if(jsonStr.Length > 0)
                 Synchronizator.sendRequestAsync(jsonStr);
+        }
+
+        private async void OnSynchronizeInMenuItemClick(object sender, RoutedEventArgs e) {
+            logger.Info("getting all data from server as json");
+
+            String currentDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            logger.Info("current dir: " + currentDir);
+            String syncDir = currentDir + "\\sync";
+
+            try {
+                String jsonStr = await Synchronizator.getJsonAsync();
+                logger.Info("got json from server, length: " + jsonStr.Length);
+                if (jsonStr.Length > 0) {
+                    bool exists = System.IO.Directory.Exists(syncDir);
+                    if (!exists) {
+                        logger.Info("creating directory: " + syncDir);
+                        System.IO.Directory.CreateDirectory(syncDir);
+                    }
+                    String syncPath = syncDir + "\\WordsDatabase_sync.db";
+                    dbHandler.createDatabaseFileBasedOnJson(jsonStr, syncPath);
+                } else {
+                    logger.Info("got empty json from server");
+                }
+            } catch (Exception ex) {
+                logger.Error("exception while getting data from server: " + ex.Message);
+            }
         }
 
         private void ShowNewWindow(Window window) {

@@ -48,12 +48,20 @@
                                    Source="/Images/Preferences.png" />
                         </MenuItem.Icon>
                     </MenuItem>
-                    <MenuItem Header="Synchronize" 
-                              Click="OnSynchronizeMenuItemClick">
+                    <MenuItem Header="Synchronize out" 
+                              Click="OnSynchronizeOutMenuItemClick">
                         <MenuItem.Icon>
                             <Image Width="16"
                                    Height="16"
                                    Source="/Images/Arrow.png" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Synchronize in" 
+                              Click="OnSynchronizeInMenuItemClick">
+                        <MenuItem.Icon>
+                            <Image Width="16"
+                                   Height="16"
+                                   Source="/Images/ArrowRightToLeft.png" />
                         </MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Close" 

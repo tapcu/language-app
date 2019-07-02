@@ -20,17 +20,17 @@ namespace LanguageApp.src {
             this.translation = translation;
             this.correctAnswers = correctAnswers;
             this.iteration = iteration;
-            if (nextDate != "")
+            if (nextDate!= null && nextDate != "")
                 try {
                     this.nextShowDate = DateTime.Parse(nextDate);
                 } catch (Exception ex) {
                     Console.WriteLine("Error with parsing date: " + nextDate + ": " + ex.Message);
                 }
-            if (lastUpdateDate != "")
+            if (lastUpdateDate != null && lastUpdateDate != "")
                 try {
                     this.lastUpdateDate = DateTime.Parse(lastUpdateDate);
                 } catch (Exception ex) {
-                    Console.WriteLine("Error with parsing date: " + lastUpdateDate + ": " + ex.Message);
+                    Console.WriteLine("Error with parsing last update date: " + lastUpdateDate + ": " + ex.Message);
                 }
         }
 

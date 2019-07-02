@@ -7,17 +7,36 @@ using System.Net.Http;
 
 namespace LanguageApp.src {
     class Synchronizator {
+        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         private static readonly HttpClient client = new HttpClient();
 
         public static async Task sendRequestAsync(String jsonStr) {
-            //var jsonStr = "{\"words\":[{\"id\": 8,  \"word\": \"tego nie spodziewałam\",  \"translation\": \"я не ожидала этого\",  \"correct_answers\": 0,  \"iteration\": 0,  \"next_show_date\": null,  \"last_update_date\": null}," +
-            //    "{\"id\": 9,  \"word\": \"cios\",  \"translation\": \"удар\",  \"correct_answers\": 7,  \"iteration\": 3,  \"next_show_date\": \"2019-05-01 23:46:14\",  \"last_update_date\": \"2019-05-01 23:46:14\"}]}";
+            String serverUrl = Config.getInstance().ServerUrl;
 
-            var content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
+            if (serverUrl != null && serverUrl.Length > 0) {
+                logger.Info("sending data to url: " + serverUrl);
 
-            var response = await client.PutAsync("http://localhost:3000/sync", content);
+                var content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
+                var response = await client.PutAsync(serverUrl, content);
+                var responseString = await response.Content.ReadAsStringAsync();
+            } else {
+                logger.Error("failed to send data to server, url is null. Please provide serverUrl value in config file.");
+            }
+        }
 
-            var responseString = await response.Content.ReadAsStringAsync();
+        public static async Task<String> getJsonAsync() {
+            String serverUrl = Config.getInstance().ServerUrl;
+
+            if (serverUrl != null && serverUrl.Length > 0) {
+                logger.Info("getting data from url: " + serverUrl);
+                var response = await client.GetAsync(serverUrl);
+
+                String responseString = await response.Content.ReadAsStringAsync();
+                return responseString;
+            } else {
+                logger.Error("failed to send data to server, url is null. Please provide serverUrl value in config file.");
+            }
+            return null;
         }
     }
 }
