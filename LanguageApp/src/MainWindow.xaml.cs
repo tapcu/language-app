@@ -7,6 +7,8 @@ using Hardcodet.Wpf.TaskbarNotification;
 using LanguageApp.src;
 using System.Text;
 using System.Reflection;
+using System.IO;
+using System.Windows.Controls;
 
 namespace LanguageApp {
     /// <summary>
@@ -58,6 +60,14 @@ namespace LanguageApp {
                 taskbarIcon = MyNotifyIcon; //get the taskbar icon, which was declared in xaml
                 timeLeftCounter = config.ShowInterval;
 
+                //hide synchronization menu items if needed
+                if (config.Synchronization == Const.SYNC_OFF) {
+                    MenuItem itemGet = GetFromServer;
+                    itemGet.Visibility = Visibility.Collapsed;
+                    MenuItem itemSend = SendToServer;
+                    itemSend.Visibility = Visibility.Collapsed;
+                }
+
                 mainTimer = new DispatcherTimer(TimeSpan.FromSeconds(config.ShowInterval), DispatcherPriority.Normal, OnMainTimerTick, Application.Current.Dispatcher);
                 OnMainTimerTick(null, null); //start timer without waiting
 
@@ -72,7 +82,9 @@ namespace LanguageApp {
                 MessageBoxResult result = MessageBox.Show(e.Message,
                                            "Error",
                                            MessageBoxButton.OK,
-                                           MessageBoxImage.Error);
+                                           MessageBoxImage.Error, 
+                                           MessageBoxResult.OK,
+                                           MessageBoxOptions.DefaultDesktopOnly);
                 this.Close();
             }
 #endif
@@ -97,6 +109,7 @@ namespace LanguageApp {
                     taskbarIcon.ShowCustomBalloon(balloon, PopupAnimation.Slide, maxBalloonStayTime);
             }
             timeLeftCounter = config.ShowInterval;
+            deleteOldLogFiles(); //delete log files older than 10 days
         }
 
         /*
@@ -151,7 +164,7 @@ namespace LanguageApp {
                                                        //put the word to queue, so it won't return at least for Const.WORDS_QUEUE_SIZE(by default 15) iterations
                 alreadyShowedWordsQueue.Enqueue(randomItem.Word);
 
-                logger.Debug("Show random word: " + randomItem.Word);
+                logger.Debug("Show random word: " + randomItem.toString());
             } else {
                 logger.Debug("No available words found in database");
                 randomItem = null;
@@ -196,7 +209,35 @@ namespace LanguageApp {
                 dItem.NextShowDate = default(DateTime);
             }
 
+            logger.Debug(String.Format("Setting correct answers to: {0}", dItem.CorrectAnswers));
             dbHandler.updateWord(dItem);
+            sendWordToServer(dItem);
+        }
+
+        private void sendWordToServer(DictionaryItem dItem) {
+            String jsonObj = "{\"id\":" + dItem.Id
+                + ",\"word\":" + "\"" + dItem.Word + "\""
+                + ",\"translation\":" + "\"" + dItem.Translation + "\""
+                + ",\"correct_answers\":" + dItem.CorrectAnswers
+                + ",\"iteration\":" + dItem.Iteration;
+
+            DateTime nextDate = dItem.NextShowDate;
+            if (!Object.Equals(nextDate, default(DateTime))) { //if date != null
+                string nextDateStr = nextDate.ToString("yyyy-MM-dd HH:mm:ss");
+                jsonObj = jsonObj + ",\"next_show_date\":" + "\"" + nextDateStr + "\"";
+            } else {
+                jsonObj = jsonObj + ",\"next_show_date\":" + "null";
+            }
+
+            DateTime currentDate = DateTime.Now;
+            string updateDateStr = currentDate.ToString("yyyy-MM-dd HH:mm:ss");
+            jsonObj = jsonObj + ",\"last_update_date\":" + "\"" + updateDateStr + "\"" + "}"; ;
+
+            String jsonStr = "{\"words\": [" + jsonObj + "] }";
+            logger.Info("JsonStr: " + jsonStr);
+
+            if(config.Synchronization == Const.SYNC_ON)
+                Synchronizator.sendRequestAsync(jsonStr);
         }
 
 
@@ -242,32 +283,54 @@ namespace LanguageApp {
             ShowNewWindow(settingsWindow);
         }
 
-        private void OnSynchronizeOutMenuItemClick(object sender, RoutedEventArgs e) {
+        private void SendToServerMenuItemClick(object sender, RoutedEventArgs e) {
             logger.Info("getting all data from db as json");
-            String jsonStr = dbHandler.getAllDataAsJson();
-            jsonStr = "{\"words\": " + jsonStr + " }";
-            logger.Info("sending data to server, data length is " + jsonStr.Length);
-            if(jsonStr.Length > 0)
-                Synchronizator.sendRequestAsync(jsonStr);
+            MessageBoxResult askResult =
+                MessageBox.Show("Send data to server? It will rewrite server state completely", "Info",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information, MessageBoxResult.No, MessageBoxOptions.DefaultDesktopOnly);
+            if (askResult == MessageBoxResult.Yes) {
+                String jsonStr = dbHandler.getAllDataAsJson();
+                jsonStr = "{\"words\": " + jsonStr + " }";
+                logger.Info("sending data to server, data length is " + jsonStr.Length);
+                if (jsonStr.Length > 0)
+                    Synchronizator.sendRequestAsync(jsonStr);
+            }
         }
 
-        private async void OnSynchronizeInMenuItemClick(object sender, RoutedEventArgs e) {
+        private async void GetFromServerMenuItemClick(object sender, RoutedEventArgs e) {
             logger.Info("getting all data from server as json");
-
-            String currentDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            logger.Info("current dir: " + currentDir);
-            String syncDir = currentDir + "\\sync";
 
             try {
                 String jsonStr = await Synchronizator.getJsonAsync();
                 logger.Info("got json from server, length: " + jsonStr.Length);
+
                 if (jsonStr.Length > 0) {
+                    String currentDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+
+                    String syncDir = currentDir + "\\sync";
                     bool exists = System.IO.Directory.Exists(syncDir);
                     if (!exists) {
                         logger.Info("creating directory: " + syncDir);
                         System.IO.Directory.CreateDirectory(syncDir);
                     }
-                    String syncPath = syncDir + "\\WordsDatabase_sync.db";
+
+                    String bkpDir = currentDir + "\\bkp";
+                    exists = System.IO.Directory.Exists(bkpDir);
+                    if (!exists) {
+                        logger.Info("creating directory: " + bkpDir);
+                        System.IO.Directory.CreateDirectory(bkpDir);
+                    }
+
+                    String dateExt = DateTime.Now.ToString("yyyy_MM_dd");
+                    String oldPath = currentDir + "\\WordsDatabase.db";
+                    String newPath = bkpDir + "\\WordsDatabase_" + dateExt + ".db";
+                    logger.Info("copying database from path: " + oldPath + " to path: " + newPath);
+                    File.Copy(oldPath, newPath, true);
+                    logger.Info("Database file was copied. Replace old file with synchronized one");
+
+                    //String syncPath = syncDir + "\\WordsDatabase_sync.db";
+                    String syncPath = currentDir + "\\WordsDatabase.db";
                     dbHandler.createDatabaseFileBasedOnJson(jsonStr, syncPath);
                 } else {
                     logger.Info("got empty json from server");
@@ -282,5 +345,21 @@ namespace LanguageApp {
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             window.ShowDialog();
         }
+
+        private void deleteOldLogFiles() {
+            String currentDir = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            String logsDir = currentDir + "\\logs";
+
+            if (System.IO.Directory.Exists(logsDir)) {
+                string[] files = Directory.GetFiles(logsDir);
+
+                foreach (string file in files) {
+                    FileInfo fi = new FileInfo(file);
+                    if (fi.LastAccessTime < DateTime.Now.AddDays(-10))
+                        fi.Delete();
+                }
+            }
+        }
+
     }
 }

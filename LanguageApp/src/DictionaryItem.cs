@@ -42,5 +42,13 @@ namespace LanguageApp.src {
         public int Iteration { get => iteration; set => iteration = value; }
         public DateTime NextShowDate { get => nextShowDate; set => nextShowDate = value; }
         public DateTime LastUpdateDate { get => lastUpdateDate; set => lastUpdateDate = value; }
+
+        public String toString() {
+            return "id: " + this.id + ", " +
+                "word: " + this.word + ", " +
+                "translation: " + this.translation + ", " +
+                "correct answers: " + this.correctAnswers + ", " +
+                "iteration: " + this.iteration;
+        }
     }
 }

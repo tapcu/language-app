@@ -5,6 +5,7 @@ using System.Data.SQLite;
 using System.Data;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace LanguageApp.src {
     class DatabaseHandler {
@@ -245,9 +246,10 @@ namespace LanguageApp.src {
 
 
         /*
-         * update iteration for the list of IDs
+         * insert new word to database
          */
         public void AddNewWord(String word, String translation) {
+            logger.Debug("adding new word:" + word + ", with translation:" + translation);
             string sql = "INSERT INTO words(word, translation) VALUES (@new_word, @new_translation)";
 
             if (word == null || translation == null)
@@ -265,6 +267,7 @@ namespace LanguageApp.src {
                 insertSQL.Parameters.AddWithValue("@new_translation", translation);
 
                 try {
+                    logger.Debug("executing query:" + insertSQL.CommandText);
                     insertSQL.ExecuteNonQuery();
                     logger.Debug(String.Format("Word {0} with translation {1} was added to database", word, translation));
                 } catch (Exception ex) {
@@ -277,6 +280,43 @@ namespace LanguageApp.src {
                 }
             } finally {
                 closeConnection();
+            }
+        }
+
+        public int CheckTranslationExistence(String translation) {
+            logger.Debug("Check occurence in database for translation " + translation);
+            //string sql = "SELECT count(*) as num FROM words WHERE translation like '%"+translation+"%'";
+            string sql = "SELECT translation FROM words WHERE translation like '%" + translation + "%'";
+
+            int dublicatesNumber = 0;
+            String regexPattern = @"^" + translation + "[0-9]*$";
+            try {
+                openConnection();
+                SQLiteCommand command = new SQLiteCommand(sql, dbConnection);
+                SQLiteDataReader reader = command.ExecuteReader();
+
+                while (reader.Read()) {
+                    //translationsNumber = Convert.ToInt32(reader["num"]);
+                    String otherTranslation = reader["translation"].ToString();
+                    logger.Debug("got possible duplicate: " + otherTranslation);
+                    //replace all brackets and commas to whitespaces
+                    otherTranslation = otherTranslation.Replace(',', ' ').Replace('(', ' ').Replace(')', ' ');
+                    //split string by whitespaces
+                    String[] words = otherTranslation.Split(' ');
+                    foreach(String word in words) {
+                        logger.Debug("checking translate duplicate for word:" + word);
+                        //check every part of the string to be like translation (+ optional number)
+                        if (Regex.IsMatch(word, regexPattern)) {
+                            dublicatesNumber++;
+                            logger.Debug("increase duplicates number:" + dublicatesNumber);
+                        }
+                    }
+                }
+
+                return dublicatesNumber;
+            } finally {
+                closeConnection();
+                logger.Debug("connection for checking translations closed");
             }
         }
 

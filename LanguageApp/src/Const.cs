@@ -17,5 +17,8 @@ namespace LanguageApp.src {
 
         public static int ITERATION_THRESHOLD = 3;
         public static int DAYS_INTERVAL = 7;
+
+        public static int SYNC_ON = 1;
+        public static int SYNC_OFF = 2;
     }
 }

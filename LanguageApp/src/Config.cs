@@ -20,6 +20,7 @@ namespace LanguageApp.src {
         public int DaysInterval { get; set; }
         public string DatabasePath { get; set; }
         public string ServerUrl { get; set; }
+        public int Synchronization { get; set; }
 
         private Config() { }
 
@@ -29,6 +30,8 @@ namespace LanguageApp.src {
                 loadJson();
                 validateConfigItems();
                 logger.Info(getConfigValuesAsStr);
+                //---just because i'm lazy and don't whant to do the authorization
+                instance.Synchronization = Const.SYNC_ON;
             }
             return instance;
         }

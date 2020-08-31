@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http;
+using System.Windows;
 
 namespace LanguageApp.src {
     class Synchronizator {
@@ -19,6 +20,8 @@ namespace LanguageApp.src {
                 var content = new StringContent(jsonStr, Encoding.UTF8, "application/json");
                 var response = await client.PutAsync(serverUrl, content);
                 var responseString = await response.Content.ReadAsStringAsync();
+                logger.Info("Got response from server: " + responseString);
+                //MessageBox.Show(responseString,"Server response",MessageBoxButton.OK);
             } else {
                 logger.Error("failed to send data to server, url is null. Please provide serverUrl value in config file.");
             }
@@ -32,6 +35,7 @@ namespace LanguageApp.src {
                 var response = await client.GetAsync(serverUrl);
 
                 String responseString = await response.Content.ReadAsStringAsync();
+                MessageBox.Show("Got data from server", "Server response", MessageBoxButton.OK);
                 return responseString;
             } else {
                 logger.Error("failed to send data to server, url is null. Please provide serverUrl value in config file.");

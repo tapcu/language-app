@@ -98,6 +98,7 @@
                     HorizontalAlignment="Center"
                     Margin="0,0,10,11"
                     Visibility="Hidden" IsCancel="True" />
+        <Label Content="note: try to make a phrase" HorizontalAlignment="Center" Padding="4" FontSize="9" Foreground="Gray" Height="20" Margin="59,0" VerticalAlignment="Top"/>
 
     </Grid>
 </UserControl>
